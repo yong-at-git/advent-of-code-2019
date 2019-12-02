@@ -28,7 +28,7 @@ def get_complete_fuel_for_mass(mass):
 def get_sum_of_fuel_for_all_modules():
     fuel_masses = []
 
-    with open("masses_of_modules") as masses_of_modules:
+    with open("day_1.input") as masses_of_modules:
         for module_mass in masses_of_modules:
             fuel_masses.append(get_complete_fuel_for_mass(int(module_mass)))
 

@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 from unittest import TestCase
 
-from days.day_1.day_1 import get_base_fuel_for_mass, get_complete_fuel_for_mass, get_sum_of_fuel_for_all_modules, \
+from days.day_1.day_1_solution import get_base_fuel_for_mass, get_complete_fuel_for_mass, get_sum_of_fuel_for_all_modules, \
     get_complete_fuel_for_fuel
 
 
