@@ -32,5 +32,5 @@ class TestDay3(TestCase):
 
         self.assertEqual(410, get_least_total_steps(path_1, path_2))
 
-    def test_solution_1(self):
+    def test_solution_2(self):
         self.assertEqual(107754, get_answer_for_question_2())
