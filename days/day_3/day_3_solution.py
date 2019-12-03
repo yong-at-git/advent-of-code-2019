@@ -6,6 +6,24 @@ def get_answer_for_question_1():
     return get_distance_of_closest_intersection(input_paths[0], input_paths[1])
 
 
+def get_answer_for_question_2():
+    input_paths = get_input_paths()
+    return get_least_total_steps(input_paths[0], input_paths[1])
+
+
+def get_least_total_steps(path_1, path_2):
+    coordinates_1 = to_coordinates(path_1)
+    coordinates_2 = to_coordinates(path_2)
+
+    intersections = get_intersection(coordinates_1, coordinates_2)
+    intersection_and_steps = {}
+    for intersection in intersections:
+        intersection_and_steps[intersection] = (coordinates_1.index(intersection) + 1) \
+                                               + (coordinates_2.index(intersection) + 1)
+    least_steps_intersection = min(intersection_and_steps, key=intersection_and_steps.get)
+    return intersection_and_steps[least_steps_intersection]
+
+
 def get_input_paths():
     with open("day_3.input") as inputs:
         path_1 = inputs.readline().split(",")
@@ -72,4 +90,5 @@ def get_distance_of_closest_coordinate(intersection_coordinates):
 
 
 if __name__ == "__main__":
-    print(get_answer_for_question_1())
+    print("Answer to question 1 = ", get_answer_for_question_1())
+    print("Answer to question 2 = ", get_answer_for_question_2())
