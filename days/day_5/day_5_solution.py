@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 from enum import Enum
+from queue import Queue
 
 
 class Opcode(Enum):
@@ -19,21 +20,21 @@ class ParamMode(Enum):
     IMMEDIATE = 1  # param value is final value
 
 
-def perform_input(op_zero_based_position, inputs, param_modes):
-    raw_input_value = input("Please give a value:")
+def perform_input(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
+    raw_input_value = predefined_values_for_input_instruction.get()
     pos_to_update = inputs[op_zero_based_position + 1]
     inputs[pos_to_update] = int(raw_input_value)
     return op_zero_based_position + 2
 
 
-def perform_output(op_zero_based_position, inputs, param_modes):
+def perform_output(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     pos_to_get_value = inputs[op_zero_based_position + 1]
     value = inputs[pos_to_get_value]
-    print("Output value:", value)
+    outputs.append(value)
     return op_zero_based_position + 2
 
 
-def perform_add(op_zero_based_position, inputs, param_modes):
+def perform_add(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
     output_pos = inputs[op_zero_based_position + 3]
@@ -44,7 +45,7 @@ def perform_add(op_zero_based_position, inputs, param_modes):
     return op_zero_based_position + 4
 
 
-def perform_multiply(op_zero_based_position, inputs, param_modes):
+def perform_multiply(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
     output_pos = inputs[op_zero_based_position + 3]
@@ -55,7 +56,7 @@ def perform_multiply(op_zero_based_position, inputs, param_modes):
     return op_zero_based_position + 4
 
 
-def perform_jump_if_true(op_zero_based_position, inputs, param_modes):
+def perform_jump_if_true(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
 
@@ -65,7 +66,8 @@ def perform_jump_if_true(op_zero_based_position, inputs, param_modes):
     return input_2 if input_1 != 0 else op_zero_based_position + 3
 
 
-def perform_jump_if_false(op_zero_based_position, inputs, param_modes):
+def perform_jump_if_false(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs,
+                          param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
 
@@ -75,7 +77,7 @@ def perform_jump_if_false(op_zero_based_position, inputs, param_modes):
     return input_2 if input_1 == 0 else op_zero_based_position + 3
 
 
-def perform_less_than(op_zero_based_position, inputs, param_modes):
+def perform_less_than(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
     output_pos = inputs[op_zero_based_position + 3]
@@ -91,7 +93,7 @@ def perform_less_than(op_zero_based_position, inputs, param_modes):
     return op_zero_based_position + 4
 
 
-def perform_equals(op_zero_based_position, inputs, param_modes):
+def perform_equals(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     input_1_pos = inputs[op_zero_based_position + 1]
     input_2_pos = inputs[op_zero_based_position + 2]
     output_pos = inputs[op_zero_based_position + 3]
@@ -107,7 +109,7 @@ def perform_equals(op_zero_based_position, inputs, param_modes):
     return op_zero_based_position + 4
 
 
-def perform_halt(op_zero_based_position, inputs, param_modes):
+def perform_halt(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
     return op_zero_based_position
 
 
@@ -125,10 +127,11 @@ def get_op_and_actions():
     }
 
 
-def perform_operation(inputs, op_zero_based_pos):
+def perform_operation(predefined_values_for_input_instruction, inputs, outputs, op_zero_based_pos):
     opcode_info_str = str(inputs[op_zero_based_pos])
     (op_code, param_modes) = parse_opcode_and_param_mode(opcode_info_str)
-    return get_op_and_actions()[op_code](op_zero_based_pos, inputs, param_modes)
+    return get_op_and_actions()[op_code](op_zero_based_pos, predefined_values_for_input_instruction, inputs, outputs,
+                                         param_modes)
 
 
 def parse_opcode_and_param_mode(opcode_info_str):
@@ -152,15 +155,16 @@ def get_param_modes(op_code, ordered_param_modes_str):
     return [int(mode) for mode in param_modes_str]
 
 
-def run_program(inputs):
+def run_program(predefined_values_for_input_instruction, inputs):
     previous_op_position = 0
+    outputs = []
 
-    next_op_position = perform_operation(inputs, previous_op_position)
+    next_op_position = perform_operation(predefined_values_for_input_instruction, inputs, outputs, previous_op_position)
     while next_op_position != previous_op_position:
         previous_op_position = next_op_position
-        next_op_position = perform_operation(inputs, next_op_position)
+        next_op_position = perform_operation(predefined_values_for_input_instruction, inputs, outputs, next_op_position)
 
-    return inputs
+    return outputs
 
 
 def get_inputs():
@@ -169,7 +173,10 @@ def get_inputs():
 
 
 def solution_1():
-    run_program(get_inputs())
+    predefined_values_for_input_instruction = Queue(1)
+    predefined_values_for_input_instruction.put(1)
+    outputs = run_program(predefined_values_for_input_instruction, get_inputs())
+    print("Outputs=", outputs)
 
 
 if __name__ == "__main__":
