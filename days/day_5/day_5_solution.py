@@ -21,7 +21,7 @@ class ParamMode(Enum):
 
 
 def perform_input(op_zero_based_position, predefined_values_for_input_instruction, inputs, outputs, param_modes):
-    raw_input_value = predefined_values_for_input_instruction.get()
+    raw_input_value = predefined_values_for_input_instruction.get(block=False)
     pos_to_update = inputs[op_zero_based_position + 1]
     inputs[pos_to_update] = int(raw_input_value)
     return op_zero_based_position + 2
