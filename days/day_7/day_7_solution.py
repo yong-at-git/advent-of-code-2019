@@ -148,10 +148,10 @@ class Amplifier:
 
 def get_solution_2_with_init_inputs(inputs):
     final_output_signals = []
-    possible_values = [5, 6, 7, 8, 9]
+    possible_phase_values = [5, 6, 7, 8, 9]
     sequence_length = 5
 
-    for phase_setting_sequence in get_phase_setting_sequences(possible_values, sequence_length):
+    for phase_setting_sequence in get_phase_setting_sequences(possible_phase_values, sequence_length):
         amplifiers = []
         for label in ['a', 'b', 'c', 'd', 'e']:
             amplifier = Amplifier(label)
@@ -164,8 +164,8 @@ def get_solution_2_with_init_inputs(inputs):
         input_signal = 0
 
         while len(list(filter(lambda amp: not amp.is_halted, amplifiers))) == 5:
-            for i in range(5):
-                input_signal = amplifiers[i].run(input_signal)[-1]
+            for amplifier in amplifiers:
+                input_signal = amplifier.run(input_signal)[-1]
 
         final_output_signals.append(input_signal)
 
