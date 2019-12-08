@@ -14,7 +14,6 @@ class ImageLayer:
         self._width = width
         self._height = height
         self._rows = []
-        self._item_to_count = None
 
     @property
     def width(self):
@@ -28,24 +27,16 @@ class ImageLayer:
     def rows(self):
         return self._rows
 
-    @property
-    def item_to_count(self):
-        return self._item_to_count
-
-    @item_to_count.setter
-    def item_to_count(self, value):
-        self._item_to_count = value
-
     def parse_layer_from_digits_series(self, digits_series):
         textwrap = TextWrapper()
         textwrap.width = self.width
         for digits_in_each_row in textwrap.wrap(digits_series):
             self._rows.append(list(map(int, digits_in_each_row)))
 
-    def get_elem_count(self):
+    def get_elem_count(self, elem):
         total_count = 0
         for row in self.rows:
-            total_count += row.count(self.item_to_count)
+            total_count += row.count(elem)
         return total_count
 
     def display(self):
@@ -98,9 +89,7 @@ class SpaceImage:
 
     def get_ordered_layers(self, elem):
         layers_copy = self.layers.copy()
-        for layer in layers_copy:
-            layer.item_to_count = elem
-        layers_copy.sort(key=lambda layer1: layer1.get_elem_count())
+        layers_copy.sort(key=lambda layer1: layer1.get_elem_count(elem))
         return layers_copy
 
     def get_final_image(self):
@@ -130,10 +119,8 @@ def get_solution_1():
     order_layers_by_elem = 0
     target_layer = space_image.get_ordered_layers(order_layers_by_elem)[0]
 
-    target_layer.item_to_count = 1
-    ones = target_layer.get_elem_count()
-    target_layer.item_to_count = 2
-    twos = target_layer.get_elem_count()
+    ones = target_layer.get_elem_count(1)
+    twos = target_layer.get_elem_count(2)
 
     return ones * twos
 
