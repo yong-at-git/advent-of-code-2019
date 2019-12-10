@@ -145,15 +145,18 @@ class Day10:
 
         second_quarter_ones_order = self.get_second_quarter_lists_ordered_by_angle(angle_and_detected_asteroids)
         for second_quarter_one in second_quarter_ones_order:
+            second_quarter_one.reverse()
             total_position_lists_ordered_clockwise.append(second_quarter_one)
 
         clock_six_ones = []
         if (0, 1) in angle_and_detected_asteroids:
             clock_six_ones = angle_and_detected_asteroids[(0, 1)]
+            clock_six_ones.reverse()
         total_position_lists_ordered_clockwise.append(clock_six_ones)
 
         third_quarter_ones_order = self.get_third_quarter_lists_ordered_by_angle(angle_and_detected_asteroids)
         for third_quarter_one in third_quarter_ones_order:
+            third_quarter_one.reverse()
             total_position_lists_ordered_clockwise.append(third_quarter_one)
 
         clock_nine_ones = []
@@ -165,14 +168,10 @@ class Day10:
         for forth_quarter_one in forth_quarter_ones_order:
             total_position_lists_ordered_clockwise.append(forth_quarter_one)
 
-        for position_list in total_position_lists_ordered_clockwise:
-            print(position_list)
-
         counter = 1
         last_deleted = None
         for position_list in total_position_lists_ordered_clockwise:
             if len(position_list) != 0:
-                print(position_list)
                 last_deleted = position_list[-1]
                 del position_list[-1]
                 if counter == 200:
