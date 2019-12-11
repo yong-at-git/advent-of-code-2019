@@ -30,18 +30,18 @@ def get_inputs():
 
 
 def get_solution_1():
-    intcode_computer = IntcodeComputer(0, 1)
-    intcode_computer.predefined_values_for_input_instruction.put(1)
-    intcode_computer.inputs = get_inputs()
+    intcode_computer = IntcodeComputer(0)
+    intcode_computer.predefined_values_for_input_instruction.append(1)
+    intcode_computer.inputs_dict = get_inputs()
     intcode_computer.run_program()
 
     return intcode_computer.outputs[-1]
 
 
 def get_solution_2():
-    intcode_computer = IntcodeComputer(0, 1)
-    intcode_computer.predefined_values_for_input_instruction.put(2)
-    intcode_computer.inputs = get_inputs()
+    intcode_computer = IntcodeComputer(0)
+    intcode_computer.predefined_values_for_input_instruction.append(2)
+    intcode_computer.inputs_dict = get_inputs()
     intcode_computer.run_program()
 
     return intcode_computer.outputs[-1]

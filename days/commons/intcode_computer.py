@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 from enum import Enum
-from queue import Queue
 
 
 class Opcode(Enum):
@@ -23,9 +22,9 @@ class ParamMode(Enum):
 
 
 class IntcodeComputer:
-    def __init__(self, init_address, num_of_values_for_input_instructions):
-        self._predefined_values_for_input_instruction = Queue(num_of_values_for_input_instructions)
-        self._inputs = {}
+    def __init__(self, init_address):
+        self._predefined_values_for_input_instruction = []
+        self._inputs_dict = {}
         self._outputs = []
         self._current_address = init_address
         self._is_halted = False
@@ -33,12 +32,12 @@ class IntcodeComputer:
         self._relative_base = 0
 
     @property
-    def inputs(self):
-        return self._inputs
+    def inputs_dict(self):
+        return self._inputs_dict
 
-    @inputs.setter
-    def inputs(self, value):
-        self._inputs = value
+    @inputs_dict.setter
+    def inputs_dict(self, value):
+        self._inputs_dict = value
 
     @property
     def outputs(self):
@@ -61,14 +60,17 @@ class IntcodeComputer:
         return self._is_waiting
 
     def get_input(self, address):
-        return self.inputs[address] if address in self.inputs else 0
+        return self.inputs_dict[address] if address in self.inputs_dict else 0
 
     def perform_input(self):
-        if self.predefined_values_for_input_instruction.empty():
+        if len(self.predefined_values_for_input_instruction) == 0:
             self._is_waiting = True
             return
+        elif self.is_waiting:
+            self._is_waiting = False
 
-        raw_input_value = self.predefined_values_for_input_instruction.get(block=False)
+        raw_input_value = self.predefined_values_for_input_instruction[0]
+        del self.predefined_values_for_input_instruction[0]
         input_1_address = self.get_input(self.current_address + 1)
 
         if self.get_param_modes()[0] == ParamMode.POSITION.value:
@@ -78,7 +80,7 @@ class IntcodeComputer:
         else:
             print("Unsupported mode for INPUT, ", self.get_param_modes()[0])
 
-        self.inputs[target_address] = raw_input_value
+        self.inputs_dict[target_address] = raw_input_value
 
         self._current_address += 2
 
@@ -122,7 +124,7 @@ class IntcodeComputer:
         else:
             print("Unsupported mode, ", self.get_param_modes()[0])
 
-        self.inputs[target_address] = input_1 + input_2
+        self.inputs_dict[target_address] = input_1 + input_2
 
         self._current_address += 4
 
@@ -152,7 +154,7 @@ class IntcodeComputer:
         else:
             print("Unsupported mode, ", self.get_param_modes()[0])
 
-        self.inputs[target_address] = input_1 * input_2
+        self.inputs_dict[target_address] = input_1 * input_2
 
         self._current_address += 4
 
@@ -229,9 +231,9 @@ class IntcodeComputer:
             print("Unsupported mode, ", self.get_param_modes()[0])
 
         if input_1 < input_2:
-            self.inputs[target_address] = 1
+            self.inputs_dict[target_address] = 1
         else:
-            self.inputs[target_address] = 0
+            self.inputs_dict[target_address] = 0
 
         self._current_address += 4
 
@@ -262,9 +264,9 @@ class IntcodeComputer:
             print("Unsupported mode, ", self.get_param_modes()[0])
 
         if input_1 == input_2:
-            self.inputs[target_address] = 1
+            self.inputs_dict[target_address] = 1
         else:
-            self.inputs[target_address] = 0
+            self.inputs_dict[target_address] = 0
 
         self._current_address += 4
 
@@ -301,7 +303,8 @@ class IntcodeComputer:
         }
 
     def perform_operation(self):
-        opcode = self.get_input(self.current_address) % 100
+        instruction = self.get_input(self.current_address)
+        opcode = instruction % 100
         return self.get_op_and_actions()[opcode]()
 
     def get_param_modes(self):
@@ -312,5 +315,5 @@ class IntcodeComputer:
         return [int(mode) for mode in modes_with_zeros]
 
     def run_program(self):
-        while not self.is_halted:
+        while not self.is_halted and not (self.is_waiting and len(self.predefined_values_for_input_instruction) == 0):
             self.perform_operation()
