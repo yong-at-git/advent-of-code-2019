@@ -123,9 +123,9 @@ class Day11Solution:
             x_values.append(x)
             y_values.append(y)
 
-        for x in range(min(x_values), max(x_values) + 1):
+        for y in reversed(range(min(y_values), max(y_values) + 1)):
             row_str = ""
-            for y in range(min(y_values), max(y_values) + 1):
+            for x in range(min(x_values), max(x_values) + 1):
                 if (x, y) in self.painted_panels:
                     if self.painted_panels[(x, y)] == PanelColor.WHITE.value:
                         row_str += "1"
