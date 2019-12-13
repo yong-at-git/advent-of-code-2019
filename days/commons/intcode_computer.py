@@ -22,14 +22,15 @@ class ParamMode(Enum):
 
 
 class IntcodeComputer:
-    def __init__(self, init_address):
+    def __init__(self, start_address=0):
         self._predefined_values_for_input_instruction = []
         self._inputs_dict = {}
         self._outputs = []
-        self._current_address = init_address
+        self._current_address = start_address
         self._is_halted = False
         self._is_waiting = False
         self._relative_base = 0
+        self._debug = False
 
     @property
     def inputs_dict(self):
@@ -58,6 +59,14 @@ class IntcodeComputer:
     @property
     def is_waiting(self):
         return self._is_waiting
+
+    @property
+    def debug(self):
+        return self._debug
+
+    @debug.setter
+    def debug(self, value):
+        self._debug = value
 
     def get_input(self, address):
         return self.inputs_dict[address] if address in self.inputs_dict else 0
@@ -304,6 +313,8 @@ class IntcodeComputer:
 
     def perform_operation(self):
         instruction = self.get_input(self.current_address)
+        if self.debug:
+            print("Run instruction=", instruction, ", at address=", self.current_address)
         opcode = instruction % 100
         return self.get_op_and_actions()[opcode]()
 
