@@ -61,17 +61,17 @@ class Day14:
             count_in_leftover = 0 if expected_out_name not in leftover else leftover[expected_out_name]
 
             time_to_apply_formula = Day14.get_apply_times(expected_out_unit, formula_out_unit, count_in_leftover)
-            print("time*****", expected_out_unit, formula_out_unit, time_to_apply_formula)
+            # print("time*****", expected_out_unit, formula_out_unit, time_to_apply_formula)
 
             if expected_out_name in leftover:
-                print("one time to apply,", time_to_apply_formula, ", fou=", formula_out_unit, ", eou=",
-                      expected_out_unit)
+                # print("one time to apply,", time_to_apply_formula, ", fou=", formula_out_unit, ", eou=",
+                #      expected_out_unit)
                 leftover[expected_out_name] += (time_to_apply_formula * formula_out_unit - expected_out_unit)
             else:
-                print("two time to apply,", time_to_apply_formula, ", fou=", formula_out_unit, ", eou=",
-                      expected_out_unit)
+                # print("two time to apply,", time_to_apply_formula, ", fou=", formula_out_unit, ", eou=",
+                #      expected_out_unit)
                 leftover[expected_out_name] = (time_to_apply_formula * formula_out_unit - expected_out_unit)
-            print("on=", expected_out, ", after=", leftover)
+            # print("on=", expected_out, ", after=", leftover)
 
         for in_elem in formula['in'].items():
             required_unit = in_elem[1] * time_to_apply_formula
@@ -90,8 +90,27 @@ class Day14:
 
         return sum(list_of_raw)
 
+    def get_solution_2(self):
+        self.parse_inputs()
+
+        should_continue = 1
+        fuel_count = 8193610  # Solution is to try with a big num and big step; then narrow down the area by adjusting their values.
+        step = 1
+        while should_continue:
+            expected_out = {'name': 'FUEL', 'unit': fuel_count}
+            list_of_raw = []
+            leftovers = {}
+            self.get_raw_chemical_count(expected_out, list_of_raw, leftovers)
+            ore_count = sum(list_of_raw)
+            print("before compare, fuel=", fuel_count)
+            if ore_count > 1000000000000:
+                return fuel_count
+
+            fuel_count += step
+
 
 if __name__ == "__main__":
     today = Day14()
 
     print("solution 1=", today.get_solution_1())
+    print("solution 2=", today.get_solution_2())
