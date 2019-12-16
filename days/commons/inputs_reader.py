@@ -6,6 +6,11 @@ def get_single_line_and_parse_to_int_list(filename):
         return list(map(int, inputs.readline().split(",")))
 
 
+def get_fist_line_as_raw_str(filename):
+    with open(filename) as inputs:
+        return inputs.readline()
+
+
 def get_list_of_raw_lines(filename):
     with open(filename) as lines:
         return [line for line in lines]

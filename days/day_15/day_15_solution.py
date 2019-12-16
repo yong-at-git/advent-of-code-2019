@@ -23,6 +23,7 @@ class Status(Enum):
 class Area(Enum):
     WALL = '#'
     OK = '.'
+    OXYGEN = '*'
 
 
 class Day15:
@@ -33,7 +34,7 @@ class Day15:
     def get_solution_1(self):
         grid = {}
         true_grid = {}
-        self.get_solution_1_with_populated_grid(grid, true_grid)
+        return self.get_solution_1_with_populated_grid(grid, true_grid)
 
     def get_solution_1_with_populated_grid(self, grid, true_grid):
         computer = IntcodeComputer()
@@ -42,8 +43,19 @@ class Day15:
         standing_position = Type2D(0, 0)
         current_direction = None
         total_movements = []
+        oxygen_position = None
+
+        found_oxygen_already = False
 
         while not computer.is_halted:
+            if found_oxygen_already:
+                # print(standing_position.as_tuple())
+                if standing_position.as_tuple() == (0, 0):
+                    print(true_grid[(0, 0)])
+                    print_grid(grid, standing_position)
+                    print()
+                    print_grid(true_grid, standing_position)
+                    return true_grid, oxygen_position
             computer.perform_operation()
 
             if computer.is_waiting:
@@ -102,27 +114,101 @@ class Day15:
                     true_grid[standing_position.as_tuple()] = Area.OK.value
                     total_movements.append(1)
                 else:
-                    print_grid(grid, standing_position.as_tuple())
-                    print()
+                    # print_grid(grid, standing_position.as_tuple())
+                    # print()
+                    if current_direction == Direction.NORTH.value:
+                        standing_position.change_y_by_step(1)
+                    elif current_direction == Direction.EAST.value:
+                        standing_position.change_x_by_step(1)
+                    elif current_direction == Direction.SOUTH.value:
+                        standing_position.change_y_by_step(-1)
+                    else:
+                        standing_position.change_x_by_step(-1)
+
+                    if found_oxygen_already:
+                        print_grid(true_grid, standing_position)
+                        return
+
+                    grid[standing_position.as_tuple()] = Area.WALL.value
+                    true_grid[standing_position.as_tuple()] = Area.OXYGEN.value
+                    found_oxygen_already = True
+                    oxygen_position = standing_position.clone()
                     # print_grid(true_grid, standing_position.as_tuple())
                     # print()
-                    return grid
+                    # return grid
 
                 del computer.outputs[0]
 
+    def get_solution_2(self):
+        true_grid, oxygen_position = self.get_solution_1()
+        oxygen_count = len(list(filter(lambda area: area == Area.OK.value, true_grid.values())))
+        oxygen_list = [oxygen_position.as_tuple()]
+        minute = 0
+        while len(oxygen_list) != oxygen_count:
+            minute += 1
+            copy_list = oxygen_list.copy()
+            for oxygen_position in copy_list:
+                north = Type2D(oxygen_position[0], oxygen_position[1]).change_y_by_step(1).as_tuple()
+                south = Type2D(oxygen_position[0], oxygen_position[1]).change_y_by_step(-1).as_tuple()
+                east = Type2D(oxygen_position[0], oxygen_position[1]).change_x_by_step(1).as_tuple()
+                west = Type2D(oxygen_position[0], oxygen_position[1]).change_x_by_step(-1).as_tuple()
+
+                if true_grid[north] == Area.OK.value and north not in oxygen_list:
+                    oxygen_list.append(north)
+
+                if true_grid[east] == Area.OK.value and east not in oxygen_list:
+                    oxygen_list.append(east)
+
+                if true_grid[south] == Area.OK.value and south not in oxygen_list:
+                    oxygen_list.append(south)
+
+                if true_grid[west] == Area.OK.value and west not in oxygen_list:
+                    oxygen_list.append(west)
+
+            print(minute, len(oxygen_list), oxygen_count)
+        return minute
+
     def get_direction_on_possible_move_north(self, grid, standing_position):
         north = standing_position.clone().change_y_by_step(1)
+        south = standing_position.clone().change_y_by_step(-1)
         east = standing_position.clone().change_x_by_step(1)
         west = standing_position.clone().change_x_by_step(-1)
 
         if north.as_tuple() not in grid:
+            if east.as_tuple() in grid and grid[east.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.NORTH.value
 
         if east.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.EAST.value
 
         if west.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[east.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.WEST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.WEST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[west.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.NORTH.value
+
+        if grid[north.as_tuple()] == Area.WALL.value and grid[west.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.EAST.value
 
         if grid[north.as_tuple()] == Area.OK.value:
             return Direction.NORTH.value
@@ -140,15 +226,43 @@ class Day15:
         north = standing_position.clone().change_y_by_step(1)
         south = standing_position.clone().change_y_by_step(-1)
         east = standing_position.clone().change_x_by_step(1)
+        west = standing_position.clone().change_x_by_step(-1)
 
         if east.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.EAST.value
 
         if north.as_tuple() not in grid:
+            if east.as_tuple() in grid and grid[east.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.NORTH.value
 
         if south.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and grid[
+                east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.SOUTH.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            west.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.SOUTH.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.EAST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[west.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.NORTH.value
 
         if grid[east.as_tuple()] == Area.OK.value:
             return Direction.EAST.value
@@ -165,16 +279,44 @@ class Day15:
     def get_direction_on_possible_move_south(self, grid, standing_position):
         west = standing_position.clone().change_x_by_step(-1)
         south = standing_position.clone().change_y_by_step(-1)
+        north = standing_position.clone().change_y_by_step(1)
         east = standing_position.clone().change_x_by_step(1)
 
         if south.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and grid[
+                east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.SOUTH.value
 
         if east.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.EAST.value
 
         if west.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[east.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.WEST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.WEST.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.EAST.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            east.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.SOUTH.value
 
         if grid[east.as_tuple()] == Area.OK.value:
             return Direction.EAST.value
@@ -190,16 +332,44 @@ class Day15:
 
     def get_direction_on_possible_move_west(self, grid, standing_position):
         west = standing_position.clone().change_x_by_step(-1)
+        east = standing_position.clone().change_x_by_step(1)
         south = standing_position.clone().change_y_by_step(-1)
         north = standing_position.clone().change_y_by_step(1)
 
         if west.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[east.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.WEST.value
 
         if north.as_tuple() not in grid:
+            if east.as_tuple() in grid and grid[east.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and grid[
+                south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.NORTH.value
 
         if south.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and west.as_tuple() in grid and \
+                    grid[west.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and grid[
+                east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.SOUTH.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.EAST.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[east.as_tuple()] == Area.WALL.value and grid[
+            south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.NORTH.value
+
+        if grid[west.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value and grid[
+            east.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.SOUTH.value
 
         if grid[west.as_tuple()] == Area.OK.value:
@@ -215,14 +385,28 @@ class Day15:
         return Direction.EAST.value
 
     def get_direction_after_hitting_west_wall(self, grid, standing_position):
+        west = standing_position.clone().change_x_by_step(-1)
+        east = standing_position.clone().change_x_by_step(1)
         south = standing_position.clone().change_y_by_step(-1)
         north = standing_position.clone().change_y_by_step(1)
 
         if north.as_tuple() not in grid:
+            if south.as_tuple() in grid and grid[south.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[
+                        east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.NORTH.value
 
         if south.as_tuple() not in grid:
+            if north.as_tuple() in grid and grid[north.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[
+                        east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.SOUTH.value
+
+        if grid[north.as_tuple()] == Area.WALL.value and grid[south.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.EAST.value
 
         if grid[north.as_tuple()] == Area.OK.value:
             return Direction.NORTH.value
@@ -234,14 +418,26 @@ class Day15:
         return Direction.EAST.value
 
     def get_direction_after_hitting_south_wall(self, grid, standing_position):
-        east = standing_position.clone().change_x_by_step(1)
         west = standing_position.clone().change_x_by_step(-1)
+        east = standing_position.clone().change_x_by_step(1)
+        south = standing_position.clone().change_y_by_step(-1)
+        north = standing_position.clone().change_y_by_step(1)
 
         if east.as_tuple() not in grid:
+            if west.as_tuple() in grid and grid[west.as_tuple()] == Area.WALL.value and east.as_tuple() in grid and \
+                    grid[east.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.EAST.value
 
         if west.as_tuple() not in grid:
+            if east.as_tuple() in grid and grid[east.as_tuple()] == Area.WALL.value and north.as_tuple() in grid and \
+                    grid[north.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.WEST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[west.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.NORTH.value
 
         if grid[east.as_tuple()] == Area.OK.value:
             return Direction.EAST.value
@@ -253,14 +449,26 @@ class Day15:
         return Direction.NORTH.value
 
     def get_direction_after_hitting_east_wall(self, grid, standing_position):
+        west = standing_position.clone().change_x_by_step(-1)
+        east = standing_position.clone().change_x_by_step(1)
         south = standing_position.clone().change_y_by_step(-1)
         north = standing_position.clone().change_y_by_step(1)
 
         if north.as_tuple() not in grid:
+            if west.as_tuple() in grid and grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and \
+                    grid[south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.NORTH.value
 
         if south.as_tuple() not in grid:
+            if west.as_tuple() in grid and grid[west.as_tuple()] == Area.WALL.value and north.as_tuple() in grid and \
+                    grid[north.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.SOUTH.value
+
+        if grid[south.as_tuple()] == Area.WALL.value and grid[north.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.WEST.value
 
         if grid[north.as_tuple()] == Area.OK.value:
             return Direction.NORTH.value
@@ -272,14 +480,25 @@ class Day15:
         return Direction.WEST.value
 
     def get_direction_after_hitting_north_wall(self, grid, standing_position):
-        east = standing_position.clone().change_x_by_step(1)
         west = standing_position.clone().change_x_by_step(-1)
+        east = standing_position.clone().change_x_by_step(1)
+        south = standing_position.clone().change_y_by_step(-1)
 
         if east.as_tuple() not in grid:
+            if west.as_tuple() in grid and grid[west.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and \
+                    grid[south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.EAST.value
 
         if west.as_tuple() not in grid:
+            if east.as_tuple() in grid and grid[east.as_tuple()] == Area.WALL.value and south.as_tuple() in grid and \
+                    grid[south.as_tuple()] == Area.WALL.value:
+                grid[standing_position.as_tuple()] = Area.WALL.value
             return Direction.WEST.value
+
+        if grid[east.as_tuple()] == Area.WALL.value and grid[west.as_tuple()] == Area.WALL.value:
+            grid[standing_position.as_tuple()] = Area.WALL.value
+            return Direction.SOUTH.value
 
         if grid[east.as_tuple()] == Area.OK.value:
             return Direction.EAST.value
@@ -320,6 +539,6 @@ class Day15:
 
 if __name__ == "__main__":
     today = Day15()
-    today.get_solution_1()
+    # today.get_solution_1()
 
-    print("Solution 1=", )
+    print("Solution 2=", today.get_solution_2())

@@ -11,9 +11,7 @@ def print_grid(grid, my_pos):
     for y in reversed(range(min(y_values), max(y_values) + 1)):
         row_str = ""
         for x in range(min(x_values), max(x_values) + 1):
-            if (x, y) == (0, 0):
-                row_str += 'O'
-            elif (x, y) == my_pos:
+            if (x, y) == my_pos:
                 row_str += 'I'
             elif (x, y) in grid:
                 row_str += grid[(x, y)]
