@@ -71,6 +71,9 @@ class IntcodeComputer:
     def get_input(self, address):
         return self.inputs_dict[address] if address in self.inputs_dict else 0
 
+    def has_output_ready(self, amount=1):
+        return len(self.outputs) == amount
+
     def perform_input(self):
         if len(self.predefined_values_for_input_instruction) == 0:
             self._is_waiting = True

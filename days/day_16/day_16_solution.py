@@ -10,6 +10,9 @@ class Day16:
     def get_input_as_list_of_single_digit(self):
         return [int(i) for i in self.get_inputs()]
 
+    def get_input_from_str(self, single_str):
+        return [int(i) for i in single_str]
+
     def get_digits_list_from_num(self, num):
         return [int(i) for i in str(num)]
 

@@ -1,5 +1,6 @@
 import unittest
 from days.day_16.day_16_solution import Day16
+import datetime
 
 
 class MyTestCase(unittest.TestCase):
@@ -17,6 +18,16 @@ class MyTestCase(unittest.TestCase):
         init_list = today.get_digits_list_from_num(80871224585914546619083218645595)
 
         self.assertEqual('24176176', today.get_output_as_str(init_list, 100)[0:8])
+
+    def test_case_2_1(self):
+        today = Day16()
+        print('Started at=', datetime.datetime.now())
+        str_in = '80871224585914546619083218645595' * 10000
+        init_list = today.get_input_from_str(str_in)
+        ut = today.get_output_as_str(init_list, 1)
+        print('Ended at=', datetime.datetime.now())
+
+        self.assertEqual('24176176', ut[0:8])
 
     def test_case_3(self):
         today = Day16()
