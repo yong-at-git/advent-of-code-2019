@@ -23,6 +23,25 @@ class Day18:
         self._standing_position_2d = None
         self._blocking_doors = []
         self._visited = []
+        self._steps = 0
+        self._pos_and_visited_step = {}
+        self._pending_doors = []
+
+    @property
+    def pending_doors(self):
+        return self._pending_doors
+
+    @property
+    def pos_and_visited_step(self):
+        return self._pos_and_visited_step
+
+    @property
+    def steps(self):
+        return self._steps
+
+    @steps.setter
+    def steps(self, value):
+        self._steps = value
 
     @property
     def visited(self):
@@ -105,6 +124,7 @@ class Day18:
     def move(self):
         self.grid[self.entrance_2d.as_tuple()] = Mark.PASSAGE.value
         self.visited.append(self.entrance_2d.as_tuple())
+        self.pos_and_visited_step[self.entrance_2d.as_tuple()] = 0
 
         while len(self.collected_keys) < len(self.keys_positions):
             next_pos = self.get_next_pos()
@@ -120,11 +140,16 @@ class Day18:
             else:
                 print("Error on making move")
 
-            #print(self.standing_position_2d.as_tuple())
+            # print(self.standing_position_2d.as_tuple())
 
         print("Done!")
 
+    def make_move(self, from_pos, to_pos):
+        pass
+
     def collect_key(self, pos):
+        key_mark = self.grid[pos]
+
         self.grid[pos] = Mark.PASSAGE.value
         self.collected_keys.append(self.grid[pos])
         self.visited.append(pos)
@@ -133,6 +158,13 @@ class Day18:
             self.mark_as_wall(pos)
 
         self.standing_position_2d = Type2D.from_tuple(pos)
+        print('k')
+        self.steps += 1
+        self.pos_and_visited_step[pos] = self.steps
+
+        for door_pos in self.pending_doors:
+            if self.grid[door_pos].lower() == key_mark:
+                self.make_move(pos, door_pos)
 
     def open_door(self, pos):
         self.grid[pos] = Mark.PASSAGE.value
@@ -142,6 +174,9 @@ class Day18:
             self.mark_as_wall(pos)
 
         self.standing_position_2d = Type2D.from_tuple(pos)
+        print('d')
+        self.steps += 1
+        self.pos_and_visited_step[pos] = self.steps
 
     def visit_new_passage(self, pos):
         self.visited.append(pos)
@@ -150,12 +185,18 @@ class Day18:
             self.mark_as_wall(pos)
 
         self.standing_position_2d = Type2D.from_tuple(pos)
+        print('n')
+        self.steps += 1
+        self.pos_and_visited_step[pos] = self.steps
 
     def revisit_passage(self, pos):
         if self.should_be_marked_as_wall(pos):
             self.mark_as_wall(pos)
 
         self.standing_position_2d = Type2D.from_tuple(pos)
+        print('r')
+        self.steps += 1
+        self.pos_and_visited_step[pos] = self.steps
 
     def har_key(self, door_pos):
         door_mark = self.grid[door_pos]
@@ -163,10 +204,10 @@ class Day18:
         return matching_key in self.collected_keys
 
     def is_openable_door(self, pos):
-        return pos in self.doors_positions and self.har_key(pos)
+        return self.grid[pos] in self.get_door_marks() and self.har_key(pos)
 
     def is_key(self, pos):
-        return pos in self.keys_positions
+        return self.grid[pos] in self.get_key_marks()
 
     def is_passage(self, pos):
         return pos in self.grid and self.grid[pos] == Mark.PASSAGE.value
@@ -198,8 +239,9 @@ class Day18:
         if new_passage:
             return new_passage
 
-        # 4. clockwise to find the first passage
-        visited_passage = next(filter(self.is_passage, [up, right, down, left]), None)
+        # 4. clockwise to find the oldest visited key
+        visited_passages = filter(self.is_passage, [up, right, down, left])
+        visited_passage = sorted(visited_passages, key=lambda p: self.pos_and_visited_step[p])[0]
         if visited_passage:
             return visited_passage
         else:
@@ -224,12 +266,11 @@ class Day18:
 
     def mark_as_wall(self, pos):
         self.grid[pos] = Mark.WALL.value
-        self.passages_positions.remove(pos)
 
     def get_solution_1(self):
         self.parse_inputs()
         self.move()
-        # print_grid(self.grid)
+        print(self.steps)
 
 
 if __name__ == "__main__":
