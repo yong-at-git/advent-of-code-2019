@@ -14,7 +14,10 @@ def print_grid(grid, my_pos=(0, 0)):
             if (x, y) == my_pos:
                 row_str += 'I'
             elif (x, y) in grid:
-                row_str += grid[(x, y)]
+                if grid[(x, y)] == '.':
+                    row_str += ' '
+                else:
+                    row_str += grid[(x, y)]
             else:
                 row_str += ' '
         print(row_str)

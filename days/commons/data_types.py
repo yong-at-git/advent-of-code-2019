@@ -1,4 +1,17 @@
 #! /usr/bin/env python3
+from enum import Enum
+
+
+class TurnStr(Enum):
+    LEFT = 'L'
+    RIGHT = 'R'
+
+
+class Direction(Enum):
+    UP = '^'
+    DOWN = 'v'
+    LEFT = '<'
+    RIGHT = '>'
 
 
 class Type2D:
@@ -8,6 +21,10 @@ class Type2D:
 
     def __repr__(self):
         return "<" + str(self.x) + ", " + str(self.y) + ">"
+
+    @staticmethod
+    def from_tuple(t):
+        return Type2D(t[0], t[1])
 
     @property
     def x(self):
@@ -38,6 +55,18 @@ class Type2D:
     def change_y_by_step(self, step=1):
         self._y = self._y + step
         return self
+
+    def up_move_by_minus_y(self):
+        return self.change_x_by_step(-1)
+
+    def left_move(self):
+        return self.change_x_by_step(-1)
+
+    def right_move(self):
+        return self.change_x_by_step(1)
+
+    def down_move_by_plus_y(self):
+        return self.change_y_by_step(1)
 
 
 class Type3D:
