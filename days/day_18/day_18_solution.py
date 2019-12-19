@@ -19,7 +19,7 @@ class Day18:
         self._doors_positions = []
         self._passages_positions = []
         self._grid = {}
-        self._entrance = None
+        self._entrance_2d = None
         self._standing_position_2d = None
         self._blocking_doors = []
         self._visited = []
@@ -45,12 +45,12 @@ class Day18:
         return self._passages_positions
 
     @property
-    def entrance(self):
-        return self._entrance
+    def entrance_2d(self):
+        return self._entrance_2d
 
-    @entrance.setter
-    def entrance(self, value):
-        self._entrance = value
+    @entrance_2d.setter
+    def entrance_2d(self, value):
+        self._entrance_2d = value
 
     @property
     def standing_position_2d(self):
@@ -83,9 +83,10 @@ class Day18:
                 pos = Type2D(x, y)
 
                 self.grid[pos.as_tuple()] = c
+
                 if c == Mark.ENTRANCE.value:
-                    self.entrance = pos.as_tuple()
-                    self._standing_position_2d = Type2D(x, y)
+                    self.entrance_2d = pos.clone()
+                    self.standing_position_2d = pos.clone()
                 elif c in Day18.get_key_marks():
                     self.keys_positions.append(pos.as_tuple())
                 elif c in Day18.get_door_marks():
@@ -102,133 +103,107 @@ class Day18:
         return get_list_of_raw_lines("day_18.input")
 
     def move(self):
+        self.grid[self.entrance_2d.as_tuple()] = Mark.PASSAGE.value
+        self.visited.append(self.entrance_2d.as_tuple())
+
         while len(self.collected_keys) < len(self.keys_positions):
-            try_pos = self.standing_position_2d.clone()
+            next_pos = self.get_next_pos()
 
-            up = try_pos.clone().up_move_by_minus_y().as_tuple()
-            right = try_pos.clone().right_move().as_tuple()
-            down = try_pos.clone().down_move_by_plus_y().as_tuple()
-            left = try_pos.clone().left_move().as_tuple()
-
-            #         print("Me at=", self.standing_position_2d.as_tuple(), ", value=",
-            #              self.grid[self.standing_position_2d.as_tuple()], ", neighbors=", self.grid[up], self.grid[right],
-            #             self.grid[down], self.grid[left])
-
-            # collect the 1st encountering key clockwise and move there
-            if up in self.keys_positions:
-                self.collect_key(up)
-                continue
-            elif right in self.keys_positions:
-                self.collect_key(right)
-                continue
-            elif down in self.keys_positions:
-                self.collect_key(down)
-                continue
-            elif left in self.keys_positions:
-                self.collect_key(left)
-                continue
-
-            # try opening any door and making move, via clockwise checking
-            has_blocking_door = False
-            if up in self.doors_positions:
-                if self.har_key(up):
-                    self.open_door(up)
-                    continue
-                else:
-                    has_blocking_door = True
-            elif right in self.doors_positions:
-                if self.har_key(right):
-                    self.open_door(right)
-                    continue
-                else:
-                    has_blocking_door = True
-            elif down in self.doors_positions:
-                if self.har_key(down):
-                    self.open_door(down)
-                    continue
-                else:
-                    has_blocking_door = True
-            elif left in self.doors_positions:
-                if self.har_key(left):
-                    self.open_door(left)
-                    continue
-                else:
-                    has_blocking_door = True
-
-            # try any unvisited passage, via clockwise checking
-            if up in self.passages_positions and up not in self.visited:
-                self.standing_position_2d.up_move_by_minus_y()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                self.visited.append(self.standing_position_2d.as_tuple())
-                continue
-            elif right in self.passages_positions and right not in self.visited:
-                self.standing_position_2d.right_move()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                self.visited.append(self.standing_position_2d.as_tuple())
-                continue
-            elif down in self.passages_positions and down not in self.visited:
-                self.standing_position_2d.down_move_by_plus_y()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                self.visited.append(self.standing_position_2d.as_tuple())
-                continue
-            elif left in self.passages_positions and left not in self.visited:
-                self.standing_position_2d.left_move()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                self.visited.append(self.standing_position_2d.as_tuple())
-                continue
-
-            # try any passage, via clockwise checking
-            if up in self.passages_positions:
-                self.standing_position_2d.up_move_by_minus_y()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                continue
-            elif right in self.passages_positions:
-                self.standing_position_2d.right_move()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                continue
-            elif down in self.passages_positions:
-                self.standing_position_2d.down_move_by_plus_y()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                continue
-            elif left in self.passages_positions:
-                self.standing_position_2d.left_move()
-                if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-                    self.mark_as_wall(self.standing_position_2d.as_tuple())
-                continue
+            if self.is_key(next_pos):
+                self.collect_key(next_pos)
+            elif self.is_openable_door(next_pos):
+                self.open_door(next_pos)
+            elif self.is_new_passage(next_pos):
+                self.visit_new_passage(next_pos)
+            elif self.is_passage(next_pos):
+                self.revisit_passage(next_pos)
             else:
-                print("impossible 2")
+                print("Error on making move")
 
-            print(self.standing_position_2d.as_tuple(), self.grid[self.standing_position_2d.as_tuple()])
+            #print(self.standing_position_2d.as_tuple())
+
         print("Done!")
 
-    def collect_key(self, key_pos):
-        self.collected_keys.append(self.grid[key_pos])
-        self.grid[key_pos] = Mark.PASSAGE.value
-        self.passages_positions.append(key_pos)
-        self.visited.append(key_pos)
-        self.standing_position_2d = Type2D.from_tuple(key_pos)
-        if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-            self.mark_as_wall(self.standing_position_2d.as_tuple())
+    def collect_key(self, pos):
+        self.grid[pos] = Mark.PASSAGE.value
+        self.collected_keys.append(self.grid[pos])
+        self.visited.append(pos)
 
-    def open_door(self, door_pos):
-        self.grid[door_pos] = Mark.PASSAGE.value
-        self.passages_positions.append(door_pos)
-        self.visited.append(door_pos)
-        self.standing_position_2d = Type2D.from_tuple(door_pos)
-        if self.should_be_marked_as_wall(self.standing_position_2d.as_tuple()):
-            self.mark_as_wall(self.standing_position_2d.as_tuple())
+        if self.should_be_marked_as_wall(pos):
+            self.mark_as_wall(pos)
+
+        self.standing_position_2d = Type2D.from_tuple(pos)
+
+    def open_door(self, pos):
+        self.grid[pos] = Mark.PASSAGE.value
+        self.visited.append(pos)
+
+        if self.should_be_marked_as_wall(pos):
+            self.mark_as_wall(pos)
+
+        self.standing_position_2d = Type2D.from_tuple(pos)
+
+    def visit_new_passage(self, pos):
+        self.visited.append(pos)
+
+        if self.should_be_marked_as_wall(pos):
+            self.mark_as_wall(pos)
+
+        self.standing_position_2d = Type2D.from_tuple(pos)
+
+    def revisit_passage(self, pos):
+        if self.should_be_marked_as_wall(pos):
+            self.mark_as_wall(pos)
+
+        self.standing_position_2d = Type2D.from_tuple(pos)
 
     def har_key(self, door_pos):
-        door = self.grid[door_pos]
-        matching_key = self.get_key_marks()[self.get_door_marks().index(door)]
-        return matching_key in self.collect_key()
+        door_mark = self.grid[door_pos]
+        matching_key = self.get_key_marks()[self.get_door_marks().index(door_mark)]
+        return matching_key in self.collected_keys
+
+    def is_openable_door(self, pos):
+        return pos in self.doors_positions and self.har_key(pos)
+
+    def is_key(self, pos):
+        return pos in self.keys_positions
+
+    def is_passage(self, pos):
+        return pos in self.grid and self.grid[pos] == Mark.PASSAGE.value
+
+    def is_new_passage(self, pos):
+        return pos not in self.visited and self.is_passage(pos)
+
+    def get_next_pos(self):
+        return self.get_next_pos_method_1()
+
+    def get_next_pos_method_1(self):
+        up = self.standing_position_2d.clone().up_move_by_minus_y().as_tuple()
+        right = self.standing_position_2d.clone().right_move().as_tuple()
+        down = self.standing_position_2d.clone().down_move_by_plus_y().as_tuple()
+        left = self.standing_position_2d.clone().left_move().as_tuple()
+
+        # 1. clockwise to find the 1st key
+        key_pos = next(filter(self.is_key, [up, right, down, left]), None)
+        if key_pos:
+            return key_pos
+
+        # 2. clockwise to find the 1st door that can be opened
+        door_pos = next(filter(self.is_openable_door, [up, right, down, left]), None)
+        if door_pos:
+            return door_pos
+
+        # 3. clockwise to find the first not visited passage
+        new_passage = next(filter(self.is_new_passage, [up, right, down, left]), None)
+        if new_passage:
+            return new_passage
+
+        # 4. clockwise to find the first passage
+        visited_passage = next(filter(self.is_passage, [up, right, down, left]), None)
+        if visited_passage:
+            return visited_passage
+        else:
+            print("ERROR, no move pos for=", self.standing_position_2d.as_tuple)
 
     def should_be_marked_as_wall(self, pos):
         try_pos = Type2D.from_tuple(pos)
@@ -261,4 +236,4 @@ if __name__ == "__main__":
     today = Day18()
 
     today.get_solution_1()
-    print(len(today.keys_positions))
+    # print(len(today.keys_positions), len(today.doors_positions))

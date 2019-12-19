@@ -57,7 +57,7 @@ class Type2D:
         return self
 
     def up_move_by_minus_y(self):
-        return self.change_x_by_step(-1)
+        return self.change_y_by_step(-1)
 
     def left_move(self):
         return self.change_x_by_step(-1)
