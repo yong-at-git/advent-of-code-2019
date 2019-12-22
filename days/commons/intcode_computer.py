@@ -52,6 +52,10 @@ class IntcodeComputer:
     def predefined_values_for_input_instruction(self):
         return self._predefined_values_for_input_instruction
 
+    @predefined_values_for_input_instruction.setter
+    def predefined_values_for_input_instruction(self, value):
+        self._predefined_values_for_input_instruction = value
+
     @property
     def is_halted(self):
         return self._is_halted
@@ -107,6 +111,7 @@ class IntcodeComputer:
             input_1 = self.get_input(self._relative_base + input_1_address)
 
         self.outputs.append(input_1)
+
 
         self._current_address += 2
 

@@ -38,9 +38,10 @@ class Day17:
         grid = self.build_grid_from_inputs(in_dict)
         return Day17.get_sum_of_alignment_params(grid)
 
-    def get_solution_2(self):
+    def get_solution_2_prepare(self):
         in_dict = self.get_original_input_dict()
         grid = self.build_grid_from_inputs(in_dict)
+        print_grid(grid)
         current_pos = self.get_start_point_pos(grid)
         current_direction = grid[current_pos]
         path = []
@@ -62,6 +63,31 @@ class Day17:
 
         path_str = list(map(lambda st: (st[0], len(st[1])), path))
         print(path_str)
+
+    def get_solution_2(self):
+        in_dict = self.get_original_input_dict()
+        computer = IntcodeComputer()
+        in_dict[0] = 2
+
+        computer.inputs_dict = in_dict
+
+        strs = get_solution_2_path_strs_ascii()
+
+        while not computer.is_halted:
+            computer.perform_operation()
+
+            if computer.is_waiting:
+                ascii_str = strs[0]
+                del strs[0]
+                for c in ascii_str:
+                    computer.predefined_values_for_input_instruction.append(ord(c))
+                computer.predefined_values_for_input_instruction.append(10)
+
+            if len(computer.outputs) > 0:
+                c = computer.outputs[0]
+                del computer.outputs[0]
+
+        return c
 
     def get_original_input_dict(self):
         return get_single_line_and_parse_to_dicts("day_17.input")
@@ -87,45 +113,6 @@ class Day17:
                     x = 0
 
         return grid
-
-    def build_path(self, in_dict):
-        computer = IntcodeComputer()
-        computer.inputs_dict = in_dict
-        grid = {}
-        x = 0
-        y = 0
-        while not computer.is_halted:
-            computer.perform_operation()
-
-            if computer.is_waiting:
-                print("waiting")
-                return
-
-            if computer.has_output_ready():
-                ascii_value = computer.outputs[0]
-                del computer.outputs[0]
-
-                if ascii_value not in [10, 35, 46]:
-                    print('not used key for Solution 1=', ascii_value)
-                else:
-                    grid_mark = Day17.ascii_to_mark(ascii_value)
-                    if grid_mark != Day17.NEW_LINE:
-                        grid[(x, y)] = grid_mark
-                        x += 1
-                    else:
-                        y += 1
-                        x = 0
-        return grid
-
-    def get_neighor_count(self, grid, pos):
-        pos_2d = Type2D.from_tuple(pos)
-
-        right = pos_2d.clone().right_move().as_tuple()
-        left = pos_2d.clone().left_move().as_tuple()
-        up = pos_2d.clone().up_move_by_minus_y().as_tuple()
-        down = pos_2d.clone().down_move_by_plus_y().as_tuple()
-
-        return len(list(filter(lambda p: grid.get(p, '') == '#', [right, left, up, down])))
 
     def get_start_point_pos(self, grid):
         return next((item[0] for item in grid.items() if is_starting_pos_mark(item[1])))
@@ -197,56 +184,10 @@ class Day17:
         elif grid.get(left, '') == '#':
             return left, ArrowDirection.LEFT.value, TurnStr.LEFT.value
         elif grid.get(right, '') == '#':
-            return right, ArrowDirection.RIGHT.value, TurnStr.LEFT.value
+            return right, ArrowDirection.RIGHT.value, TurnStr.RIGHT.value
         else:
             print("Warn facing up, potential backtracking at=", current_pos)
             return current_pos, ArrowDirection.UP.value, None
-
-    def get_direction(self, pos, grid, current_direction):
-        pos_2d = Type2D(pos[0], pos[1])
-        right = pos_2d.clone().change_x_by_step(1).as_tuple()
-        left = pos_2d.clone().change_x_by_step(-1).as_tuple()
-        up = pos_2d.clone().change_y_by_step(1).as_tuple()
-        down = pos_2d.clone().change_y_by_step(-1).as_tuple()
-
-        if current_direction == ArrowDirection.UP.value:
-            if up in grid and grid[up] == '#':
-                return ArrowDirection.UP.value
-            elif right in grid and grid[right] == '#':
-                return ArrowDirection.RIGHT.value
-            elif left in grid and grid[left] == '#':
-                return ArrowDirection.LEFT.value
-            else:
-                print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == ArrowDirection.RIGHT.value:
-            if right in grid and grid[right] == '#':
-                return ArrowDirection.RIGHT.value
-            elif up in grid and grid[up] == '#':
-                return ArrowDirection.UP.value
-            elif down in grid and grid[down] == '#':
-                return ArrowDirection.DOWN.value
-            else:
-                print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == ArrowDirection.DOWN.value:
-            if down in grid and grid[down] == '#':
-                return ArrowDirection.DOWN.value
-            elif left in grid and grid[left] == '#':
-                return ArrowDirection.LEFT.value
-            elif right in grid and grid[right] == '#':
-                return ArrowDirection.RIGHT.value
-            else:
-                print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == ArrowDirection.LEFT.value:
-            if left in grid and grid[left] == '#':
-                return ArrowDirection.LEFT.value
-            elif up in grid and grid[up] == '#':
-                return ArrowDirection.UP.value
-            elif down in grid and grid[down] == '#':
-                return ArrowDirection.DOWN.value
-            else:
-                print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        else:
-            print("unknown")
 
 
 def is_starting_pos_mark(mark):
@@ -254,8 +195,29 @@ def is_starting_pos_mark(mark):
                     ArrowDirection.RIGHT.value]
 
 
+def get_solution_2_path_strs_ascii():
+    main_routine = 'A,B,B,C,C,A,A,B,B,C'
+    func_a = 'L,12,R,4,R,4'
+    func_b = 'R,12,R,4,L,12'
+    func_c = 'R,12,R,4,L,6,L,8,L,8'
+    y_n = 'n'
+
+    return [main_routine, func_a, func_b, func_c, y_n]
+
+
 if __name__ == "__main__":
     today = Day17()
 
-    # print("Solution 1=", today.get_solution_1())
-    today.get_solution_2()
+    print("Solution 1=", today.get_solution_1())
+
+    """
+    Solution 2 pattern
+    A,B,B,C,C,A,A,B,B,C
+A = ('L', 12), ('R', 4), ('R', 4)
+B = ('R', 12), ('R', 4), ('L', 12)
+C = ('R', 12), ('R', 4), ('L', 6), ('L', 8), ('L', 8)
+    """
+    print("Solution 2=", today.get_solution_2())
+
+    # cmd_str = ','.join(list(map(str, get_solution_2_path_strs_ascii())))
+    # print(cmd_str)
