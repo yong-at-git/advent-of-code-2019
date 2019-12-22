@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 from days.commons.inputs_reader import get_list_of_raw_lines
 from days.commons.outputs_utils import print_grid
-from days.commons.data_types import Direction, TurnStr, Type2D
+from days.commons.data_types import ArrowDirection, TurnStr, Type2D
 from enum import Enum
 import string
 

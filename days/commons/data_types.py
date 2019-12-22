@@ -7,7 +7,7 @@ class TurnStr(Enum):
     RIGHT = 'R'
 
 
-class Direction(Enum):
+class ArrowDirection(Enum):
     UP = '^'
     DOWN = 'v'
     LEFT = '<'

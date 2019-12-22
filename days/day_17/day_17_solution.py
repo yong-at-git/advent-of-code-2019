@@ -2,35 +2,28 @@
 from days.commons.inputs_reader import get_single_line_and_parse_to_dicts
 from days.commons.intcode_computer import IntcodeComputer
 from days.commons.outputs_utils import print_grid
-from days.commons.data_types import TurnStr, Direction, Type2D
+from days.commons.data_types import TurnStr, ArrowDirection, Type2D
 
 from enum import Enum
 
 
-class ASCII(Enum):
-    HASH = 35
-    DOT = 46
-    NEW_LINE = 10
-    COMMA = 44
+class Marks(Enum):
+    SCAFOLLD = '#'
+    SPACE = '.'
 
 
 class Day17:
-    NEW_LINE = 'n'
-
-    @staticmethod
-    def ascii_to_mark(ascii_value):
-        marks = {
-            35: '#',
-            46: '.',
-            10: Day17.NEW_LINE
-        }
-        return marks[ascii_value]
-
     @staticmethod
     def is_intersection(pos, grid):
-        (x, y) = pos
-        return (x - 1, y) in grid and grid[(x - 1, y)] == '#' and (x + 1, y) in grid and grid[(x + 1, y)] == '#' and (
-            x, y - 1) in grid and grid[(x, y - 1)] == '#' and (x, y + 1) in grid and grid[(x, y + 1)] == '#'
+        pos_2d = Type2D.from_tuple(pos)
+
+        left = pos_2d.clone().left_move().as_tuple()
+        right = pos_2d.clone().right_move().as_tuple()
+        up = pos_2d.up_move_by_minus_y().as_tuple()
+        down = pos_2d.down_move_by_plus_y().as_tuple()
+
+        return grid.get(left, '') == '#' and grid.get(right, '') == '#' and grid.get(up, '') == '#' \
+               and grid.get(down, '') == '#'
 
     @staticmethod
     def get_sum_of_alignment_params(grid):
@@ -48,71 +41,27 @@ class Day17:
     def get_solution_2(self):
         in_dict = self.get_original_input_dict()
         grid = self.build_grid_from_inputs(in_dict)
-        print_grid(grid)
-        pos = self.get_start_point(grid)
-        pos = (pos[0] + 1, pos[1])
-        direction = self.get_init_direction()
-        path = [(direction, [pos])]
+        current_pos = self.get_start_point_pos(grid)
+        current_direction = grid[current_pos]
+        path = []
 
         while True:
-            n_pos, n_direction = self.get_next_pos_and_direction(pos, grid, direction)
-            if n_pos == pos:
+            n_pos, n_direction, n_turn = self.get_next_movement_info(grid, current_pos, current_direction)
+
+            if n_pos == current_pos:
+                print("Visited all nodes. Stop.")
                 break
-            else:
-                pos = n_pos
-                direction = n_direction
-                if direction == path[-1][0]:
-                    path[-1][1].append(pos)
-                else:
-                    path.append((direction, [pos]))
 
-        # print('Path=', path)
-        turns = list(map(lambda st: (st[0], len(st[1])), path))
-        tt = []
-        for i in range(len(turns)):
-            nu = turns[i][0]
-            previous = turns[i - 1][0]
-            if previous == Direction.UP.value:
-                if nu == Direction.RIGHT.value:
-                    tt.append(TurnStr.RIGHT.value)
-                    tt.append(turns[i][1])
-                elif nu == Direction.LEFT.value:
-                    tt.append(TurnStr.LEFT.value)
-                    tt.append(turns[i][1])
-                else:
-                    print("Sleep")
-            elif previous == Direction.RIGHT.value:
-                if nu == Direction.UP.value:
-                    tt.append(TurnStr.LEFT.value)
-                    tt.append(turns[i][1])
-                elif nu == Direction.DOWN.value:
-                    tt.append(TurnStr.RIGHT.value)
-                    tt.append(turns[i][1])
-                else:
-                    print("Sleep")
-            elif previous == Direction.DOWN.value:
-                if nu == Direction.RIGHT.value:
-                    tt.append(TurnStr.LEFT.value)
-                    tt.append(turns[i][1])
-                elif nu == Direction.LEFT.value:
-                    tt.append(TurnStr.RIGHT.value)
-                    tt.append(turns[i][1])
-                else:
-                    print("Sleep")
-            elif previous == Direction.LEFT.value:
-                if nu == Direction.UP.value:
-                    tt.append(TurnStr.RIGHT.value)
-                    tt.append(turns[i][1])
-                elif nu == Direction.DOWN.value:
-                    tt.append(TurnStr.LEFT.value)
-                    tt.append(turns[i][1])
-                else:
-                    print("Sleep")
+            if n_turn:
+                path.append((n_turn, [n_pos]))
             else:
-                print("Sleep")
+                path[-1][1].append(n_pos)
 
-        tt_str = list(map(str, tt))
-        print(",".join(tt_str))
+            current_pos = n_pos
+            current_direction = n_direction
+
+        path_str = list(map(lambda st: (st[0], len(st[1])), path))
+        print(path_str)
 
     def get_original_input_dict(self):
         return get_single_line_and_parse_to_dicts("day_17.input")
@@ -130,17 +79,13 @@ class Day17:
                 ascii_value = computer.outputs[0]
                 del computer.outputs[0]
 
-                if ascii_value not in [10, 35, 46]:
-                    print('not used key for Solution 1=', ascii_value)
-                    grid[(x, y)] = 'X'
+                if ascii_value != 10:
+                    grid[(x, y)] = chr(ascii_value)
+                    x += 1
                 else:
-                    grid_mark = Day17.ascii_to_mark(ascii_value)
-                    if grid_mark != Day17.NEW_LINE:
-                        grid[(x, y)] = grid_mark
-                        x += 1
-                    else:
-                        y += 1
-                        x = 0
+                    y += 1
+                    x = 0
+
         return grid
 
     def build_path(self, in_dict):
@@ -173,71 +118,89 @@ class Day17:
         return grid
 
     def get_neighor_count(self, grid, pos):
-        pos_2d = Type2D(pos[0], pos[1])
-        right = pos_2d.clone().change_x_by_step(1).as_tuple()
-        left = pos_2d.clone().change_x_by_step(-1).as_tuple()
-        up = pos_2d.clone().change_y_by_step(-1).as_tuple()
-        down = pos_2d.clone().change_y_by_step(1).as_tuple()
-        possibles = [right, left, up, down]
-        return len(list(filter(lambda p: p in grid and grid[p] == '#', possibles)))
+        pos_2d = Type2D.from_tuple(pos)
 
-    def get_start_point(self, grid):
-        scaffold_dict = {k: v for k, v in grid.items() if v == '#'}
+        right = pos_2d.clone().right_move().as_tuple()
+        left = pos_2d.clone().left_move().as_tuple()
+        up = pos_2d.clone().up_move_by_minus_y().as_tuple()
+        down = pos_2d.clone().down_move_by_plus_y().as_tuple()
 
-        return list(filter(lambda k: self.get_neighor_count(grid, k) == 1, scaffold_dict.keys()))[0]
+        return len(list(filter(lambda p: grid.get(p, '') == '#', [right, left, up, down])))
+
+    def get_start_point_pos(self, grid):
+        return next((item[0] for item in grid.items() if is_starting_pos_mark(item[1])))
 
     def get_init_direction(self):
-        return Direction.UP.value
+        return ArrowDirection.UP.value
 
-    def get_next_pos_and_direction(self, pos, grid, current_direction):
-        pos_2d = Type2D(pos[0], pos[1])
-        right = pos_2d.clone().change_x_by_step(1).as_tuple()
-        left = pos_2d.clone().change_x_by_step(-1).as_tuple()
-        up = pos_2d.clone().change_y_by_step(-1).as_tuple()
-        down = pos_2d.clone().change_y_by_step(1).as_tuple()
+    def get_next_movement_info(self, grid, current_pos, current_direction):
+        """
+        :param current_pos:
+        :param grid:
+        :param current_direction:
+        :return: (pos, direction, turn)
+        """
+        pos_2d = Type2D.from_tuple(current_pos)
 
-        if current_direction == Direction.UP.value:
-            if up in grid and grid[up] == '#':
-                return up, Direction.UP.value
-            elif right in grid and grid[right] == '#':
-                return right, Direction.RIGHT.value
-            elif left in grid and grid[left] == '#':
-                return left, Direction.LEFT.value
-            else:
-                print('Pos no turn at=', pos, ', direction=', current_direction)
-                return pos, current_direction
-        elif current_direction == Direction.RIGHT.value:
-            if right in grid and grid[right] == '#':
-                return right, Direction.RIGHT.value
-            elif up in grid and grid[up] == '#':
-                return up, Direction.UP.value
-            elif down in grid and grid[down] == '#':
-                return down, Direction.DOWN.value
-            else:
-                print('Pos no turn at=', pos, ', direction=', current_direction)
-                return pos, current_direction
-        elif current_direction == Direction.DOWN.value:
-            if down in grid and grid[down] == '#':
-                return down, Direction.DOWN.value
-            elif left in grid and grid[left] == '#':
-                return left, Direction.LEFT.value
-            elif right in grid and grid[right] == '#':
-                return right, Direction.RIGHT.value
-            else:
-                print('Pos no turn at=', pos, ', direction=', current_direction)
-                return pos, current_direction
-        elif current_direction == Direction.LEFT.value:
-            if left in grid and grid[left] == '#':
-                return left, Direction.LEFT.value
-            elif up in grid and grid[up] == '#':
-                return up, Direction.UP.value
-            elif down in grid and grid[down] == '#':
-                return down, Direction.DOWN.value
-            else:
-                print('Pos no turn at=', pos, ', direction=', current_direction)
-                return pos, current_direction
+        right = pos_2d.clone().right_move().as_tuple()
+        left = pos_2d.clone().left_move().as_tuple()
+        up = pos_2d.clone().up_move_by_minus_y().as_tuple()
+        down = pos_2d.clone().down_move_by_plus_y().as_tuple()
+
+        if current_direction == ArrowDirection.UP.value:
+            return self.now_facing_up_but_what_next(current_pos, grid, down, left, right, up)
+        elif current_direction == ArrowDirection.RIGHT.value:
+            return self.now_facing_right_but_what_next(current_pos, grid, down, left, right, up)
+        elif current_direction == ArrowDirection.DOWN.value:
+            return self.now_facing_down_but_what_next(current_pos, grid, down, left, right, up)
+        elif current_direction == ArrowDirection.LEFT.value:
+            return self.now_facing_left_but_what_next(current_pos, grid, down, left, right, up)
         else:
-            print("unknown")
+            print("Unknown. Eat or sleep.")
+
+    def now_facing_left_but_what_next(self, current_pos, grid, down, left, right, up):
+        if grid.get(left, '') == '#':
+            return left, ArrowDirection.LEFT.value, None
+        elif grid.get(up, '') == '#':
+            return up, ArrowDirection.UP.value, TurnStr.RIGHT.value
+        elif grid.get(down, '') == '#':
+            return down, ArrowDirection.DOWN.value, TurnStr.LEFT.value
+        else:
+            print("Warn facing left, potential backtracking at=", current_pos)
+            return current_pos, ArrowDirection.LEFT.value, None
+
+    def now_facing_down_but_what_next(self, current_pos, grid, down, left, right, up):
+        if grid.get(down, '') == '#':
+            return down, ArrowDirection.DOWN.value, None
+        elif grid.get(left, '') == '#':
+            return left, ArrowDirection.LEFT.value, TurnStr.RIGHT.value
+        elif grid.get(right, '') == '#':
+            return right, ArrowDirection.RIGHT.value, TurnStr.LEFT.value
+        else:
+            print("Warn facing down, potential backtracking at=", current_pos)
+            return current_pos, ArrowDirection.DOWN.value, None
+
+    def now_facing_right_but_what_next(self, current_pos, grid, down, left, right, up):
+        if grid.get(right, '') == '#':
+            return right, ArrowDirection.RIGHT.value, None
+        elif grid.get(up, '') == '#':
+            return up, ArrowDirection.UP.value, TurnStr.LEFT.value
+        elif grid.get(down, '') == '#':
+            return down, ArrowDirection.DOWN.value, TurnStr.RIGHT.value
+        else:
+            print("Warn facing right, potential backtracking at=", current_pos)
+            return current_pos, ArrowDirection.RIGHT.value, None
+
+    def now_facing_up_but_what_next(self, current_pos, grid, down, left, right, up):
+        if grid.get(up, '') == '#':
+            return up, ArrowDirection.UP.value, None
+        elif grid.get(left, '') == '#':
+            return left, ArrowDirection.LEFT.value, TurnStr.LEFT.value
+        elif grid.get(right, '') == '#':
+            return right, ArrowDirection.RIGHT.value, TurnStr.LEFT.value
+        else:
+            print("Warn facing up, potential backtracking at=", current_pos)
+            return current_pos, ArrowDirection.UP.value, None
 
     def get_direction(self, pos, grid, current_direction):
         pos_2d = Type2D(pos[0], pos[1])
@@ -246,44 +209,49 @@ class Day17:
         up = pos_2d.clone().change_y_by_step(1).as_tuple()
         down = pos_2d.clone().change_y_by_step(-1).as_tuple()
 
-        if current_direction == Direction.UP.value:
+        if current_direction == ArrowDirection.UP.value:
             if up in grid and grid[up] == '#':
-                return Direction.UP.value
+                return ArrowDirection.UP.value
             elif right in grid and grid[right] == '#':
-                return Direction.RIGHT.value
+                return ArrowDirection.RIGHT.value
             elif left in grid and grid[left] == '#':
-                return Direction.LEFT.value
+                return ArrowDirection.LEFT.value
             else:
                 print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == Direction.RIGHT.value:
+        elif current_direction == ArrowDirection.RIGHT.value:
             if right in grid and grid[right] == '#':
-                return Direction.RIGHT.value
+                return ArrowDirection.RIGHT.value
             elif up in grid and grid[up] == '#':
-                return Direction.UP.value
+                return ArrowDirection.UP.value
             elif down in grid and grid[down] == '#':
-                return Direction.DOWN.value
+                return ArrowDirection.DOWN.value
             else:
                 print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == Direction.DOWN.value:
+        elif current_direction == ArrowDirection.DOWN.value:
             if down in grid and grid[down] == '#':
-                return Direction.DOWN.value
+                return ArrowDirection.DOWN.value
             elif left in grid and grid[left] == '#':
-                return Direction.LEFT.value
+                return ArrowDirection.LEFT.value
             elif right in grid and grid[right] == '#':
-                return Direction.RIGHT.value
+                return ArrowDirection.RIGHT.value
             else:
                 print('Pos impossible no turn at=', pos, ', direction=', current_direction)
-        elif current_direction == Direction.LEFT.value:
+        elif current_direction == ArrowDirection.LEFT.value:
             if left in grid and grid[left] == '#':
-                return Direction.LEFT.value
+                return ArrowDirection.LEFT.value
             elif up in grid and grid[up] == '#':
-                return Direction.UP.value
+                return ArrowDirection.UP.value
             elif down in grid and grid[down] == '#':
-                return Direction.DOWN.value
+                return ArrowDirection.DOWN.value
             else:
                 print('Pos impossible no turn at=', pos, ', direction=', current_direction)
         else:
             print("unknown")
+
+
+def is_starting_pos_mark(mark):
+    return mark in [ArrowDirection.UP.value, ArrowDirection.DOWN.value, ArrowDirection.LEFT.value,
+                    ArrowDirection.RIGHT.value]
 
 
 if __name__ == "__main__":

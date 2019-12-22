@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 from days.commons.inputs_reader import get_single_line_and_parse_to_dicts
 from days.commons.intcode_computer import IntcodeComputer
+from days.commons.outputs_utils import print_grid, print_int_grid
 
 
 class Day19:
