@@ -80,8 +80,9 @@ class IntcodeComputer:
 
     def perform_input(self):
         if len(self.predefined_values_for_input_instruction) == 0:
-            self._is_waiting = True
-            return
+            #self._is_waiting = True
+            #return
+            self.predefined_values_for_input_instruction.append(-1) # day 23 customized
         elif self.is_waiting:
             self._is_waiting = False
 
